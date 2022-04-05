@@ -61,7 +61,7 @@ mod solquad {
         let vote_account = &mut ctx.accounts.vote_account;
         vote_account.voter = *ctx.accounts.voter.key;
 
-        if pool_account.start_time > Clock::get().unwrap().unix_timestamp && pool_account.end_time > Clock::get().unwrap().unix_timestamp {
+        if pool_account.start_time < Clock::get().unwrap().unix_timestamp && Clock::get().unwrap().unix_timestamp < pool_account.end_time {
             let index = pool_account.projects.iter().position(|x| x.project_id == vote_for).unwrap();
             pool_account.projects[index].votes_count += 1;
 
