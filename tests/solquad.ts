@@ -8,9 +8,17 @@ describe("solquad", () => {
 
   const program = anchor.workspace.Solquad as Program<Solquad>;
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.rpc.initialize({});
-    console.log("Your transaction signature", tx);
-  });
+  // it("Is initialized!", async () => {
+  //   // Add your test here.
+  //   const tx = await program.rpc.initialize({});
+  //   console.log("Your transaction signature", tx);
+  // });
+
+  // it("Create Pool", async () => {
+  //   await program.create_pool(new anchor.BN(100000), {
+  //     accounts: {
+
+  //     }
+  //   })
+  // })
 });

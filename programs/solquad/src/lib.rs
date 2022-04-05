@@ -27,12 +27,60 @@ mod solquad {
                 .to_account_info()
                 .key;
         ctx.accounts.pool_account.pool_amount = amount;
+        ctx.accounts.pool_account.start_time = start;
+        ctx.accounts.pool_account.end_time = end;
         Ok(())
     }
 
-    pub fn add_projects_to_pool(ctx: Context<AddProjectsToPoolAccount>, project: ProjectAccount) -> Result<()> {
-        ctx.accounts.pool_account.pool_owner_key = *ctx.accounts.pool_owner.key;
-        ctx.accounts.pool_account.projects.project_owner_key = &ctx.accounts.project_owner.key;
+    pub fn add_projects_to_pool(ctx: Context<AddProjectsToPoolAccount>, name: String) -> Result<()> {
+        let mut id = 1;
+
+        let pool_account = &mut ctx.accounts.pool_account;
+        pool_account.pool_owner_key = *ctx.accounts.pool_owner.key;
+        // ctx.accounts.pool_account.projects.project_owner_key = &ctx.accounts.project_owner.key;
+
+        // ctx.accounts.pool_account.project_owner
+
+        let project = ProjectAccount {
+            project_id: id,
+            project_owner_key: *ctx.accounts.project_owner.key,
+            project_name: name,
+            votes_count: 0,
+            vote_amount: 0,
+        };
+
+        pool_account.projects.push(project);
+        pool_account.total_projects += 1;
+        id += 1;
+
+        Ok(())
+    }
+
+    pub fn vote_for_project(ctx: Context<VoteForProject>, vote_for: u32, amount: u64) -> Result<()> {
+        let pool_account = &mut ctx.accounts.pool_account;
+        let vote_account = &mut ctx.accounts.vote_account;
+        vote_account.voter = *ctx.accounts.voter.key;
+
+        if pool_account.start_time > Clock::get().unwrap().unix_timestamp && pool_account.end_time > Clock::get().unwrap().unix_timestamp {
+            let index = pool_account.projects.iter().position(|x| x.project_id == vote_for).unwrap();
+            pool_account.projects[index].votes_count += 1;
+
+            // let ix = anchor_lang::solana_program::system_instruction::transfer(
+            //     &vote_account.voter.key(),
+            //     &pool_account.projects[index].project_owner_key.key(),
+            //     amount,
+            // );
+
+            // anchor_lang::solana_program::program::invoke(
+            //     &ix,
+            //     &[
+            //         vote_account.voter.to_account_info(),
+            //         pool_account.projects[index].project_owner_key.to_account_info(),
+            //     ],
+            // );
+            pool_account.projects[index].vote_amount += amount;
+        }
+
         Ok(())
     }
 
@@ -214,12 +262,21 @@ pub struct AddProjectsToPoolAccount<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+#[derive(Accounts)]
+pub struct VoteForProject<'info> {
+    #[account(mut)]
+    pub voter: AccountInfo<'info>,
+    pub pool_account: Account<'info, PoolAccount>,
+    pub vote_account: Account<'info, VoterAccount>,
+}
+
 #[account]
 pub struct ProjectAccount {
     pub project_id: u32,
     pub project_owner_key: Pubkey,
     pub project_name: String,
     pub votes_count: u64,
+    pub vote_amount: u64,
 }
 
 #[account]
@@ -229,6 +286,7 @@ pub struct PoolAccount {
     pub pool_token: Pubkey,
     pub pool_amount: u64,
     pub projects: Vec<ProjectAccount>,
+    pub total_projects: u64,
     pub start_time: i64,
     pub end_time: i64,
 }
